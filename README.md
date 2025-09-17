@@ -18,8 +18,8 @@
     * Table name: players
 * Any version of Python 3
 * Git
-* Required Python Libraries (these will be installed by running install.sh in step 3)
-    * <ins>__PLACEHOLDER for libraries we decide will be needed in install.sh__<ins>
+* Required Python Libraries (these will be installed by running install.py in step 3)
+    * <ins>__PLACEHOLDER for libraries we decide will be needed in install.py__<ins>
 
 ### 2. Clone The Repository
 * To clone this repository to the virtual machine run these commands:
@@ -27,9 +27,8 @@
     * cd Photon-Project-Team-6
 
 ### 3. Setup and Install Required Libaries
-* These commands will make the install script executable and then install the required Python libraries listed above
-    * chmod +x install.sh
-    * ./install.sh
+* This command will install the required Python libraries:
+    * python3 install.py
 
 ### 4. Running the Photon Game
 * Use the following command to run the game
