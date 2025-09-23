@@ -4,9 +4,9 @@ from psycopg2 import sql
 connection_params = {
     'dbname': 'photon',
     'user': 'student',
-    'password': 'student',
-    'host': '127.0.0.1',
-    'port': '5432'
+    # 'password': 'student',
+    # 'host': '127.0.0.1',
+    # 'port': '5432'
 }
 
 try:
@@ -44,4 +44,5 @@ finally:
         cursor.close()
     if conn:
         conn.close()
+
 
