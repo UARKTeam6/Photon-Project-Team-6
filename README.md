@@ -36,8 +36,8 @@
 
 ### 5. Additional Notes and Gameplay
 * The game uses UDP sockets for communication:
-    * Broadcast: 127.0.0.1.7500
-    * Receive: 127.0.0.1:7501
+    * Broadcast: 0.0.0.0 :7500
+    * Receive: 127.0.0.1 :7501
 * You will be greeted by a splash entry screen for approximately <ins>__PLACEHOLDER for # seconds we decide to show__<ins>
 * Next you will see a player entry screen and fill in the player id number
     * To clear entries press f12 and to start game press f5
