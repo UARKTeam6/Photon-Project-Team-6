@@ -30,7 +30,8 @@
     * cd Photon-Project-Team-6
 
 ### 3. Setup and Install Required Libaries
-* This command will install the required Python libraries:
+* These commands will install the required Python libraries:
+    * chmod +x install.sh
     * ./install.sh
 
 ### 4. Running the Photon Game
