@@ -33,6 +33,7 @@
 * These commands will install the required Python libraries:
     * chmod +x install.sh
     * ./install.sh
+         * Password: student
 
 ### 4. Running the Photon Game
 * Use the following command to run the game
