@@ -30,11 +30,11 @@ if ! python3 -m pip --version; then
     sudo apt-get install -y python3-pip
 fi
 
-# 4) Upgrade pip to make sure it can install all python libraries
-python3 -m pip install --upgrade pip
+# 4) Upgrade pip to make sure it can install all python libraries, break sys packages to prevent python from flagging these
+python3 -m pip install --upgrade pip --break-system-packages
 
 # 5) Install required Python libraries (tkinter doesnt need pip)
-python3 -m pip install pillow psycopg2-binary pygame
+python3 -m pip install pillow psycopg2-binary pygame --break-system-packages
 sudo apt-get install -y python3-tk
 
 # 6) Confirm python libraries installed
