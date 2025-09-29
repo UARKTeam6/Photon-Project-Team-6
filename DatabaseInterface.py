@@ -4,43 +4,10 @@ import psycopg2
 connection_params = {
     'dbname': 'photon',
     'user': 'student',
-    # 'password': 'student',
-    # 'host': 'localhost',
-    # 'port': '5432'
+    'password': 'student',
+    'host': 'localhost',
+     'port': '5432'
 }
-
-
-# --- Initialization Function ---
-def init_players():
-    """Insert starter players if they don’t already exist."""
-    conn, cursor = None, None
-    try:
-        conn = psycopg2.connect(**connection_params)
-        cursor = conn.cursor()
-
-        starter_players = [
-            (100, "John Fortnite"),
-            (101, "Jane Battlefield")
-        ]
-
-        for pid, cname in starter_players:
-            cursor.execute('''
-                INSERT INTO players (id, codename)
-                VALUES (%s, %s)
-                ON CONFLICT (id) DO UPDATE SET codename = EXCLUDED.codename;
-            ''', (pid, cname))
-
-        conn.commit()
-        print("[DB] Starter players added/ensured.")
-
-    except Exception as error:
-        print(f"[DB ERROR] {error}")
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
 
 
 # --- Get Player by ID ---
@@ -114,3 +81,44 @@ def list_players():
             cursor.close()
         if conn:
             conn.close()
+
+
+# --- Init with sample data ---
+def init_players():
+    """Insert John Fortnite and Jane Battlefield if they don’t exist."""
+    conn, cursor = None, None
+    try:
+        conn = psycopg2.connect(**connection_params)
+        cursor = conn.cursor()
+
+        starter_players = [
+            (100, "John Fortnite"),
+            (101, "Jane Battlefield"),
+        ]
+
+        for pid, cname in starter_players:
+            cursor.execute('''
+                INSERT INTO players (id, codename)
+                VALUES (%s, %s)
+                ON CONFLICT (id) DO UPDATE SET codename = EXCLUDED.codename;
+            ''', (pid, cname))
+
+        conn.commit()
+        print("[DB] Starter players ensured")
+
+    except Exception as error:
+        print(f"[DB ERROR] {error}")
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+# --- Run standalone for testing ---
+if __name__ == "__main__":
+    init_players()
+    print("Current players in DB:")
+    for row in list_players():
+        print(row)
