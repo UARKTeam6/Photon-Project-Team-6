@@ -1,51 +1,162 @@
+import socket
 from tkinter import *
-import os
+from tkinter import messagebox
 from PIL import Image, ImageTk
+from DatabaseInterface import get_player, add_player
 
-splash = Tk()
-# Splash window target size (pixels)
-height = 500
-width = 780
-x = (splash.winfo_screenwidth() // 2) - (width // 2)
-y = (splash.winfo_screenheight() // 2) - (height // 2)
-splash.geometry(f"{width}x{height}+{x}+{y}")
+# --- UDP Setup ---
+TX_PORT = 7500
+sock_tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock_tx.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-# load and display splash image
-# try catch in case image not found
-try:
-    img_path = "images/photon_logo.png"
-    img = Image.open(img_path)
-    img = img.copy()
-    img.thumbnail((width, height), Image.LANCZOS)
-    splash_image = ImageTk.PhotoImage(img)
-    sp_image = Label(
-        splash,
-        image=splash_image,
-    )
-    sp_image.pack(expand=True)
-    splash.overrideredirect(True)  # Remove title bar
-except Exception as e:
-    print(f"Error loading splash image: {e}")
+broadcast_ip = None
 
-def main_window():
-    splash.withdraw()
-    
+def send_message(msg: str):
+    """Send a message to broadcast port 7500 using the selected address."""
+    addr = broadcast_ip.get()
+    sock_tx.sendto(msg.encode(), (addr, TX_PORT))
+    print(f"[UDP SEND] {msg} -> {addr}:{TX_PORT}")
+
+
+# --- Entry Screen ---
+MAX_TEAM_SIZE = 15
+
+def entry_screen():
+    global broadcast_ip
     window = Tk()
-    window.configure(bg="white")
-    height = 650
-    width = 1240
-    x = (window.winfo_screenwidth() // 2) - (width // 2)
-    y = (window.winfo_screenheight() // 2) - (height // 2)
-    window.geometry(f"{width}x{height}+{x}+{y}")
-    
-    def exit_window():
-        window.quit()
+    window.title("Player Entry")
+    window.configure(bg="black")
+    window.geometry("800x800")
 
-    window.protocol("WM_DELETE_WINDOW", exit_window)
+    Label(window, text="Game Setup!", font=("Arial", 24, "bold"),
+          fg="blue", bg="black").grid(row=0, column=0, columnspan=2, pady=10)
+
+    # Broadcast IP selection
+    broadcast_ip = StringVar(value="127.0.0.1")
+    Label(window, text="Broadcast IP:", bg="black", fg="white").grid(row=1, column=0, sticky="e", padx=5)
+    Entry(window, textvariable=broadcast_ip, width=20).grid(row=1, column=1, sticky="w", padx=5, pady=5)
+
+    # Frames for teams
+    red_frame = Frame(window, bg="darkred", padx=10, pady=10)
+    green_frame = Frame(window, bg="darkgreen", padx=10, pady=10)
+    red_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
+    green_frame.grid(row=2, column=1, sticky="nsew", padx=10, pady=10)
+
+    # Team headers
+    Label(red_frame, text="RED TEAM", bg="darkred", fg="white",
+          font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=5)
+    Label(green_frame, text="GREEN TEAM", bg="darkgreen", fg="white",
+          font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=5)
+
+    # Column labels
+    for frame in [red_frame, green_frame]:
+        Label(frame, text="#", bg=frame["bg"], fg="white", width=3).grid(row=1, column=0, padx=2, pady=2)
+        Label(frame, text="Player ID", bg=frame["bg"], fg="white").grid(row=1, column=1, padx=2, pady=2)
+        Label(frame, text="Name", bg=frame["bg"], fg="white").grid(row=1, column=2, padx=2, pady=2)
+        Label(frame, text="Equipment ID", bg=frame["bg"], fg="white").grid(row=1, column=3, padx=2, pady=2)
+
+    # Store row entries
+    red_entries, green_entries = [], []
+
+    def handle_player_id(pid_entry, cname_entry):
+        pid = pid_entry.get()
+        if pid.isdigit():
+            codename = get_player(int(pid))
+            if codename:
+                cname_entry.delete(0, END)
+                cname_entry.insert(0, codename)
+            else:
+                messagebox.showinfo("Info", f"Player {pid} not found. Please enter new codename.")
+
+    def handle_equipment(pid_entry, cname_entry, equip_entry, team_list):
+        pid, cname, equip = pid_entry.get(), cname_entry.get(), equip_entry.get()
+        if not (pid.isdigit() and equip.isdigit()):
+            messagebox.showerror("Error", "Player ID and Equipment ID must be integers")
+            return
+        if not cname:
+            messagebox.showerror("Error", "Codename cannot be empty")
+            return
+        add_player(int(pid), cname)
+        send_message(str(equip))
+        team_list.append((int(pid), cname, int(equip)))
+        print(f"[ENTRY] Added {pid}:{cname} with equip {equip}")
+
+    # Build rows
+    for i in range(1, MAX_TEAM_SIZE + 1):
+        Label(red_frame, text=str(i), bg="darkred", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
+        Label(green_frame, text=str(i), bg="darkgreen", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
+
+        pid_entry = Entry(red_frame, width=6)
+        cname_entry = Entry(red_frame, width=15)
+        equip_entry = Entry(red_frame, width=6)
+        pid_entry.grid(row=i+1, column=1, padx=2, pady=2)
+        cname_entry.grid(row=i+1, column=2, padx=2, pady=2)
+        equip_entry.grid(row=i+1, column=3, padx=2, pady=2)
+        pid_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry: handle_player_id(p, c))
+        equip_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry, eq=equip_entry: handle_equipment(p, c, eq, red_entries))
+        red_entries.append((pid_entry, cname_entry, equip_entry))
+
+        pid_entry2 = Entry(green_frame, width=6)
+        cname_entry2 = Entry(green_frame, width=15)
+        equip_entry2 = Entry(green_frame, width=6)
+        pid_entry2.grid(row=i+1, column=1, padx=2, pady=2)
+        cname_entry2.grid(row=i+1, column=2, padx=2, pady=2)
+        equip_entry2.grid(row=i+1, column=3, padx=2, pady=2)
+        pid_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2: handle_player_id(p, c))
+        equip_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq, green_entries))
+        green_entries.append((pid_entry2, cname_entry2, equip_entry2))
+
+    # Buttons
+    def clear_all():
+        for row in red_entries + green_entries:
+            for widget in row:
+                widget.delete(0, END)
+
+    def start_game():
+        send_message("202")
+        print("[GAME] Starting Play Action Screen...")
+        window.destroy()
+        open_play_screen()
+
+    btn_frame = Frame(window, bg="black")
+    btn_frame.grid(row=3, column=0, columnspan=2, pady=15)
+    Button(btn_frame, text="Clear Entries", command=clear_all, width=20).grid(row=0, column=0, padx=10)
+    Button(btn_frame, text="Start Game", command=start_game, width=20).grid(row=0, column=1, padx=10)
+
+    window.mainloop()
 
 
-# splash screen timer
-splash.after(3000, main_window)
-# main window is what leads to main application
+# --- Play Action Screen Stub ---
+def open_play_screen():
+    play = Tk()
+    play.title("Game Screen (to be developed lolllllllll)")
+    play.configure(bg="gray20")
+    play.geometry("800x800")
+    play.mainloop()
 
-splash.mainloop()
+
+# --- Splash Screen ---
+def show_splash():
+    splash = Tk()
+    height, width = 500, 780
+    x = (splash.winfo_screenwidth() // 2) - (width // 2)
+    y = (splash.winfo_screenheight() // 2) - (height // 2)
+    splash.geometry(f"{width}x{height}+{x}+{y}")
+
+    try:
+        img_path = "images/photon_logo.png"
+        img = Image.open(img_path)
+        img.thumbnail((width, height), Image.LANCZOS)
+        splash_image = ImageTk.PhotoImage(img)
+        Label(splash, image=splash_image).pack(expand=True)
+        splash.overrideredirect(True)
+    except Exception as e:
+        print(f"Error loading splash image: {e}")
+
+    # After 3 seconds → entry screen
+    splash.after(3000, lambda: (splash.destroy(), entry_screen()))
+    splash.mainloop()
+
+
+if __name__ == "__main__":
+    show_splash()
