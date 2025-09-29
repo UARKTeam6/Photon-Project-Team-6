@@ -5,7 +5,7 @@ connection_params = {
     'dbname': 'photon',
     'user': 'student',
     # 'password': 'student',
-    # 'host': 'localhost',
+    # 'host': '/var/run/postgresql',  # use socket on Debian if needed
     # 'port': '5432'
 }
 
@@ -35,20 +35,32 @@ def get_player(player_id):
 
 # --- Add or Update Player ---
 def add_player(player_id, codename):
-    """Insert or update a player in the database."""
+    """Insert a new player, or update if the ID already exists."""
     conn, cursor = None, None
     try:
         conn = psycopg2.connect(**connection_params)
         cursor = conn.cursor()
 
-        cursor.execute('''
-            INSERT INTO players (id, codename)
-            VALUES (%s, %s)
-            ON CONFLICT (id) DO UPDATE SET codename = EXCLUDED.codename;
-        ''', (player_id, codename))
+        # First check if player exists
+        cursor.execute("SELECT id FROM players WHERE id = %s;", (player_id,))
+        exists = cursor.fetchone()
+
+        if exists:
+            # Update codename if player already exists
+            cursor.execute(
+                "UPDATE players SET codename = %s WHERE id = %s;",
+                (codename, player_id)
+            )
+            print(f"[DB] Updated player {player_id}:{codename}")
+        else:
+            # Insert new player
+            cursor.execute(
+                "INSERT INTO players (id, codename) VALUES (%s, %s);",
+                (player_id, codename)
+            )
+            print(f"[DB] Inserted player {player_id}:{codename}")
 
         conn.commit()
-        print(f"[DB] Added/updated player {player_id}:{codename}")
 
     except Exception as error:
         print(f"[DB ERROR] {error}")
@@ -86,34 +98,12 @@ def list_players():
 # --- Init with sample data ---
 def init_players():
     """Insert John Fortnite and Jane Battlefield if they don’t exist."""
-    conn, cursor = None, None
-    try:
-        conn = psycopg2.connect(**connection_params)
-        cursor = conn.cursor()
-
-        starter_players = [
-            (100, "John Fortnite"),
-            (101, "Jane Battlefield"),
-        ]
-
-        for pid, cname in starter_players:
-            cursor.execute('''
-                INSERT INTO players (id, codename)
-                VALUES (%s, %s)
-                ON CONFLICT (id) DO UPDATE SET codename = EXCLUDED.codename;
-            ''', (pid, cname))
-
-        conn.commit()
-        print("[DB] Starter players ensured")
-
-    except Exception as error:
-        print(f"[DB ERROR] {error}")
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+    starter_players = [
+        (100, "John Fortnite"),
+        (101, "Jane Battlefield"),
+    ]
+    for pid, cname in starter_players:
+        add_player(pid, cname)
 
 
 # --- Run standalone for testing ---
