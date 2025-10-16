@@ -134,6 +134,5 @@ def open_play_screen():
     play.geometry("800x800")
     play.mainloop()
 
-
 if __name__ == "__main__":
     entry_screen()

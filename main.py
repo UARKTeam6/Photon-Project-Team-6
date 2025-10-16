@@ -117,6 +117,13 @@ def entry_screen():
         print("[GAME] Starting Play Action Screen...")
         window.destroy()
         open_play_screen()
+        
+    # F5 to start game, F12 to clear all
+    # Control binding for other keyboards like mac
+    window.bind('<F5>', lambda e: start_game())
+    window.bind('<F12>', lambda e: clear_all())
+    window.bind('<Control-F5>', lambda e: start_game())
+    window.bind('<Control-F12>', lambda e: clear_all())
 
     btn_frame = Frame(window, bg="black")
     btn_frame.grid(row=3, column=0, columnspan=2, pady=15)
