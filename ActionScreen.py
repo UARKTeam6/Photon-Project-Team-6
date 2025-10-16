@@ -18,7 +18,7 @@ class PlayActionScreen:
         self.window = Tk()
         self.window.title("Play Action Display")
         self.window.configure(bg="black")
-        self.window.geometry("1400x900")
+        self.window.geometry("1200x700")
         
         self.setup_ui()
         self.update_timer()
@@ -32,7 +32,7 @@ class PlayActionScreen:
         title_label = Label(
             main_frame,
             text="Entry Terminal",
-            font=("Arial", 16, "bold"),
+            font=("arial", 16, "bold"),
             bg="black",
             fg="white"
         )
@@ -53,7 +53,7 @@ class PlayActionScreen:
         scores_label = Label(
             content_frame,
             text="Current Scores",
-            font=("Arial", 18, "bold"),
+            font=("arial", 18, "bold"),
             bg="black",
             fg="cyan"
         )
@@ -76,7 +76,7 @@ class PlayActionScreen:
         Label(
             red_header_frame,
             text="RED TEAM",
-            font=("Arial", 16, "bold"),
+            font=("arial", 16, "bold"),
             bg="black",
             fg="white"
         ).pack()
@@ -92,11 +92,11 @@ class PlayActionScreen:
         for player_id, codename, equip_id in self.red_team:
             player_frame = Frame(self.red_players_frame, bg="black")
             player_frame.pack(fill=X, pady=1)
-            
+            # ⬛
             Label(
                 player_frame,
                 text=f"⬛ {codename}",
-                font=("Arial", 10),
+                font=("arial", 10),
                 bg="black",
                 fg="red",
                 anchor="w"
@@ -105,7 +105,7 @@ class PlayActionScreen:
             Label(
                 player_frame,
                 text=str(player_id),
-                font=("Arial", 10, "bold"),
+                font=("arial", 10, "bold"),
                 bg="black",
                 fg="red",
                 anchor="e"
@@ -115,11 +115,13 @@ class PlayActionScreen:
         self.red_score_label = Label(
             red_header_frame,
             text=str(red_score),
-            font=("Arial", 24, "bold"),
+            font=("arial", 24, "bold"),
             bg="black",
             fg="red"
         )
         self.red_score_label.pack()
+
+        # --------------------------------------------------------------------------------------
         
         # Green Team Column
         green_header_frame = Frame(parent, bg="black")
@@ -128,7 +130,7 @@ class PlayActionScreen:
         Label(
             green_header_frame,
             text="GREEN TEAM",
-            font=("Arial", 16, "bold"),
+            font=("arial", 16, "bold"),
             bg="black",
             fg="white"
         ).pack()
@@ -147,8 +149,8 @@ class PlayActionScreen:
             
             Label(
                 player_frame,
-                text=f"{codename}",
-                font=("Arial", 10),
+                text=f"⬛ {codename}",
+                font=("arial", 10),
                 bg="black",
                 fg="green",
                 anchor="w"
@@ -157,7 +159,7 @@ class PlayActionScreen:
             Label(
                 player_frame,
                 text=str(player_id),
-                font=("Arial", 10, "bold"),
+                font=("arial", 10, "bold"),
                 bg="black",
                 fg="green",
                 anchor="e"
@@ -167,7 +169,7 @@ class PlayActionScreen:
         self.green_score_label = Label(
             green_header_frame,
             text=str(green_score),
-            font=("Arial", 24, "bold"),
+            font=("arial", 24, "bold"),
             bg="black",
             fg="green"
         )
@@ -185,7 +187,7 @@ class PlayActionScreen:
         action_header = Label(
             action_frame,
             text="Current Game Action",
-            font=("Arial", 14, "bold"),
+            font=("arial", 14, "bold"),
             bg="blue",
             fg="cyan"
         )
@@ -195,7 +197,7 @@ class PlayActionScreen:
         self.action_text = Text(
             action_frame,
             height=6,
-            font=("Arial", 10),
+            font=("arial", 10),
             bg="blue",
             fg="white",
             bd=0,
@@ -213,7 +215,7 @@ class PlayActionScreen:
         self.timer_label = Label(
             parent,
             text="Time Remaining: 6:00",
-            font=("Arial", 16, "bold"),
+            font=("arial", 16, "bold"),
             bg="black",
             fg="white"
         )
