@@ -7,8 +7,8 @@ class PlayActionScreen:
         Initialize the play action screen.
         
         Args:
-            red_team: List of tuples (player_id, codename, equipment_id)
-            green_team: List of tuples (player_id, codename, equipment_id)
+            red_team: List of tuples [player_id, codename, equipment_id, score]
+            green_team: List of tuples [player_id, codename, equipment_id, score]
         """
         self.red_team = red_team
         self.green_team = green_team
@@ -85,11 +85,12 @@ class PlayActionScreen:
         self.red_players_frame = Frame(parent, bg="black")
         self.red_players_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=10)
         
-        # Calculate total red team score
-        red_score = sum(player[0] for player in self.red_team) if self.red_team else 0
+        # Calculate total red team score 
+        red_score = sum(player[3] for player in self.red_team) if self.red_team else 0
         
         # Display red team players
-        for player_id, codename, equip_id in self.red_team:
+        for player in self.red_team:
+            player_id, codename, equip_id, score = player
             player_frame = Frame(self.red_players_frame, bg="black")
             player_frame.pack(fill=X, pady=1)
             # ⬛
@@ -101,10 +102,10 @@ class PlayActionScreen:
                 fg="red",
                 anchor="w"
             ).pack(side=LEFT, fill=X, expand=True)
-            
+            # right side, individual score
             Label(
                 player_frame,
-                text=str(player_id),
+                text=str(score),
                 font=("arial", 10, "bold"),
                 bg="black",
                 fg="red",
@@ -139,11 +140,12 @@ class PlayActionScreen:
         self.green_players_frame = Frame(parent, bg="black")
         self.green_players_frame.grid(row=2, column=1, sticky="nsew", padx=20, pady=10)
         
-        # Calculate total green team score
-        green_score = sum(player[0] for player in self.green_team) if self.green_team else 0
+        # Calculate total green team score 
+        green_score = sum(player[3] for player in self.green_team) if self.green_team else 0
         
         # Display green team players
-        for player_id, codename, equip_id in self.green_team:
+        for player in self.green_team:
+            player_id, codename, equip_id, score = player
             player_frame = Frame(self.green_players_frame, bg="black")
             player_frame.pack(fill=X, pady=1)
             
@@ -155,10 +157,10 @@ class PlayActionScreen:
                 fg="green",
                 anchor="w"
             ).pack(side=LEFT, fill=X, expand=True)
-            
+            # right side, individual score
             Label(
                 player_frame,
-                text=str(player_id),
+                text=str(score),
                 font=("arial", 10, "bold"),
                 bg="black",
                 fg="green",
@@ -253,14 +255,14 @@ def open_play_screen(red_team=None, green_team=None):
     Open the play action screen with the given teams.
     
     Args:
-        red_team: List of tuples (player_id, codename, equipment_id)
-        green_team: List of tuples (player_id, codename, equipment_id)
+        red_team: List of lists [player_id, codename, equipment_id, score]
+        green_team: List of lists [player_id, codename, equipment_id, score]
     """
     # Use sample data if no teams provided
     if red_team is None:
-        red_team = [(1, "Opus", 6025)]
+        red_team = [[1, "Opus", 6025, 0]]
     if green_team is None:
-        green_team = [(2, "Scooby Doo", 5000)]
+        green_team = [[2, "Scooby Doo", 5000, 0]]
     
     screen = PlayActionScreen(red_team, green_team)
     screen.run()
@@ -268,6 +270,6 @@ def open_play_screen(red_team=None, green_team=None):
 
 if __name__ == "__main__":
     # Test with sample data
-    red_team = [(1, "Opus", 6025)]
-    green_team = [(2, "Scooby Doo", 5000)]
+    red_team = [[1, "Opus", 6025, 0], [3, "Alpha", 7001, 0]]
+    green_team = [[2, "Scooby Doo", 5000, 0], [4, "Bravo", 8002, 0]]
     open_play_screen(red_team, green_team)
