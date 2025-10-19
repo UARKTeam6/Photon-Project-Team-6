@@ -115,8 +115,26 @@ def entry_screen():
     def start_game():
         send_message("202")
         print("[GAME] Starting Play Action Screen...")
+        red_team = []
+        for pid_entry, cname_entry, equip_entry in red_entries:
+            pid = pid_entry.get()
+            cname = cname_entry.get()
+            equip = equip_entry.get()
+            # Only add if all fields are filled
+            if pid and cname and equip:
+                red_team.append([int(pid), cname, int(equip), 0])  # score starts at 0
+        green_team = []
+        for pid_entry, cname_entry, equip_entry in green_entries:
+            pid = pid_entry.get()
+            cname = cname_entry.get()
+            equip = equip_entry.get()
+            # Only add if all fields are filled
+            if pid and cname and equip:
+                green_team.append([int(pid), cname, int(equip), 0])  # score starts at 0
+        # opens action screen
         window.destroy()
-        open_play_screen()
+        from ActionScreen import open_play_screen
+        open_play_screen(red_team, green_team)
 
     btn_frame = Frame(window, bg="black")
     btn_frame.grid(row=3, column=0, columnspan=2, pady=15)
@@ -125,14 +143,13 @@ def entry_screen():
 
     window.mainloop()
 
-
-# --- Play Action Screen Stub ---
-def open_play_screen():
-    play = Tk()
-    play.title("Game Screen (to be developed lolllllllll)")
-    play.configure(bg="gray20")
-    play.geometry("800x800")
-    play.mainloop()
+# --- Play Action Screen Stub --- Unneeded now that we import from ActionScreen.py
+# def open_play_screen():
+#     play = Tk()
+#     play.title("Game Screen (to be developed lolllllllll)")
+#     play.configure(bg="gray20")
+#     play.geometry("800x800")
+#     play.mainloop()
 
 if __name__ == "__main__":
     entry_screen()
