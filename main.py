@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from DatabaseInterface import get_player, add_player
+from ActionScreen import open_play_screen
 
 # --- UDP Setup ---
 TX_PORT = 7500
@@ -68,7 +69,7 @@ def entry_screen():
             else:
                 messagebox.showinfo("Info", f"Player {pid} not found. Please enter new codename.")
 
-    def handle_equipment(pid_entry, cname_entry, equip_entry, team_list):
+    def handle_equipment(pid_entry, cname_entry, equip_entry):
         pid, cname, equip = pid_entry.get(), cname_entry.get(), equip_entry.get()
         if not (pid.isdigit() and equip.isdigit()):
             messagebox.showerror("Error", "Player ID and Equipment ID must be integers")
@@ -78,7 +79,6 @@ def entry_screen():
             return
         add_player(int(pid), cname)
         send_message(str(equip))
-        team_list.append((int(pid), cname, int(equip)))
         print(f"[ENTRY] Added {pid}:{cname} with equip {equip}")
 
     # Build rows
@@ -93,7 +93,7 @@ def entry_screen():
         cname_entry.grid(row=i+1, column=2, padx=2, pady=2)
         equip_entry.grid(row=i+1, column=3, padx=2, pady=2)
         pid_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry: handle_player_id(p, c))
-        equip_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry, eq=equip_entry: handle_equipment(p, c, eq, red_entries))
+        equip_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry, eq=equip_entry: handle_equipment(p, c, eq))
         red_entries.append((pid_entry, cname_entry, equip_entry))
 
         pid_entry2 = Entry(green_frame, width=6)
@@ -103,7 +103,7 @@ def entry_screen():
         cname_entry2.grid(row=i+1, column=2, padx=2, pady=2)
         equip_entry2.grid(row=i+1, column=3, padx=2, pady=2)
         pid_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2: handle_player_id(p, c))
-        equip_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq, green_entries))
+        equip_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq))
         green_entries.append((pid_entry2, cname_entry2, equip_entry2))
 
     # Buttons
@@ -115,8 +115,27 @@ def entry_screen():
     def start_game():
         send_message("202")
         print("[GAME] Starting Play Action Screen...")
+        red_team = []
+        for pid_entry, cname_entry, equip_entry in red_entries:  # red_entries contains widgets
+            pid = pid_entry.get()
+            cname = cname_entry.get()
+            equip = equip_entry.get()
+            # Only add if all fields are filled
+            if pid and cname and equip:
+                red_team.append([int(pid), cname, int(equip), 0])  # score starts at 0
+        
+        green_team = []
+        for pid_entry, cname_entry, equip_entry in green_entries:  # green_entries contains widgets
+            pid = pid_entry.get()
+            cname = cname_entry.get()
+            equip = equip_entry.get()
+            # Only add if all fields are filled
+            if pid and cname and equip:
+                green_team.append([int(pid), cname, int(equip), 0])  # score starts at 0
+        
+        # opens action screen
         window.destroy()
-        open_play_screen()
+        open_play_screen(red_team, green_team)
         
     # F5 to start game, F12 to clear all
     # Control binding for other keyboards like mac
@@ -131,16 +150,6 @@ def entry_screen():
     Button(btn_frame, text="Start Game", command=start_game, width=20).grid(row=0, column=1, padx=10)
 
     window.mainloop()
-
-
-# --- Play Action Screen Stub ---
-def open_play_screen():
-    play = Tk()
-    play.title("Game Screen (to be developed lolllllllll)")
-    play.configure(bg="gray20")
-    play.geometry("800x800")
-    play.mainloop()
-
 
 # --- Splash Screen ---
 def show_splash():
