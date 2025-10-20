@@ -1,8 +1,10 @@
+# entry_screen.py
 import socket
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from DatabaseInterface import get_player, add_player
+from ActionScreen import open_play_screen
 
 # --- UDP Setup ---
 TX_PORT = 7500
@@ -17,8 +19,6 @@ def send_message(msg: str):
     sock_tx.sendto(msg.encode(), (addr, TX_PORT))
     print(f"[UDP SEND] {msg} -> {addr}:{TX_PORT}")
 
-
-# --- Entry Screen ---
 MAX_TEAM_SIZE = 15
 
 def entry_screen():
@@ -55,7 +55,6 @@ def entry_screen():
         Label(frame, text="Name", bg=frame["bg"], fg="white").grid(row=1, column=2, padx=2, pady=2)
         Label(frame, text="Equipment ID", bg=frame["bg"], fg="white").grid(row=1, column=3, padx=2, pady=2)
 
-    # Store row entries
     red_entries, green_entries = [], []
 
     def handle_player_id(pid_entry, cname_entry):
@@ -68,7 +67,7 @@ def entry_screen():
             else:
                 messagebox.showinfo("Info", f"Player {pid} not found. Please enter new codename.")
 
-    def handle_equipment(pid_entry, cname_entry, equip_entry, team_list):
+    def handle_equipment(pid_entry, cname_entry, equip_entry):
         pid, cname, equip = pid_entry.get(), cname_entry.get(), equip_entry.get()
         if not (pid.isdigit() and equip.isdigit()):
             messagebox.showerror("Error", "Player ID and Equipment ID must be integers")
@@ -78,7 +77,6 @@ def entry_screen():
             return
         add_player(int(pid), cname)
         send_message(str(equip))
-        team_list.append((int(pid), cname, int(equip)))
         print(f"[ENTRY] Added {pid}:{cname} with equip {equip}")
 
     # Build rows
@@ -93,7 +91,7 @@ def entry_screen():
         cname_entry.grid(row=i+1, column=2, padx=2, pady=2)
         equip_entry.grid(row=i+1, column=3, padx=2, pady=2)
         pid_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry: handle_player_id(p, c))
-        equip_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry, eq=equip_entry: handle_equipment(p, c, eq, red_entries))
+        equip_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry, eq=equip_entry: handle_equipment(p, c, eq))
         red_entries.append((pid_entry, cname_entry, equip_entry))
 
         pid_entry2 = Entry(green_frame, width=6)
@@ -103,10 +101,9 @@ def entry_screen():
         cname_entry2.grid(row=i+1, column=2, padx=2, pady=2)
         equip_entry2.grid(row=i+1, column=3, padx=2, pady=2)
         pid_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2: handle_player_id(p, c))
-        equip_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq, green_entries))
+        equip_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq))
         green_entries.append((pid_entry2, cname_entry2, equip_entry2))
 
-    # Buttons
     def clear_all():
         for row in red_entries + green_entries:
             for widget in row:
@@ -120,21 +117,24 @@ def entry_screen():
             pid = pid_entry.get()
             cname = cname_entry.get()
             equip = equip_entry.get()
-            # Only add if all fields are filled
             if pid and cname and equip:
-                red_team.append([int(pid), cname, int(equip), 0])  # score starts at 0
+                red_team.append([int(pid), cname, int(equip), 0])
+        
         green_team = []
         for pid_entry, cname_entry, equip_entry in green_entries:
             pid = pid_entry.get()
             cname = cname_entry.get()
             equip = equip_entry.get()
-            # Only add if all fields are filled
             if pid and cname and equip:
-                green_team.append([int(pid), cname, int(equip), 0])  # score starts at 0
-        # opens action screen
+                green_team.append([int(pid), cname, int(equip), 0])
+        
         window.destroy()
-        from ActionScreen import open_play_screen
         open_play_screen(red_team, green_team)
+
+    window.bind('<F5>', lambda e: start_game())
+    window.bind('<F12>', lambda e: clear_all())
+    window.bind('<Control-F5>', lambda e: start_game())
+    window.bind('<Control-F12>', lambda e: clear_all())
 
     btn_frame = Frame(window, bg="black")
     btn_frame.grid(row=3, column=0, columnspan=2, pady=15)
@@ -142,14 +142,3 @@ def entry_screen():
     Button(btn_frame, text="Start Game", command=start_game, width=20).grid(row=0, column=1, padx=10)
 
     window.mainloop()
-
-# --- Play Action Screen Stub --- Unneeded now that we import from ActionScreen.py
-# def open_play_screen():
-#     play = Tk()
-#     play.title("Game Screen (to be developed lolllllllll)")
-#     play.configure(bg="gray20")
-#     play.geometry("800x800")
-#     play.mainloop()
-
-if __name__ == "__main__":
-    entry_screen()

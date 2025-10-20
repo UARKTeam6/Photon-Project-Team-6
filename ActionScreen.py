@@ -12,7 +12,9 @@ class PlayActionScreen:
         """
         self.red_team = red_team
         self.green_team = green_team
-        self.game_start_time = time.time()
+        self.warning_start_time = time.time()
+        self.warning_duration = 30 # 30 seconds
+        self.game_start_time = None  # will be set when warning ends
         self.game_duration = 360  # 6 minutes in seconds
         
         self.window = Tk()
@@ -27,16 +29,6 @@ class PlayActionScreen:
         # Main container
         main_frame = Frame(self.window, bg="black")
         main_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
-        
-        # Title
-        title_label = Label(
-            main_frame,
-            text="Entry Terminal",
-            font=("arial", 16, "bold"),
-            bg="black",
-            fg="white"
-        )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="w")
         
         # Border frame
         border_frame = Frame(main_frame, bg="yellow", bd=3)
@@ -67,6 +59,7 @@ class PlayActionScreen:
         
         # Timer at bottom
         self.setup_timer(content_frame)
+        self.setup_warning_timer(content_frame)
         
     def setup_team_display(self, parent):
         # Red Team Column
@@ -81,6 +74,12 @@ class PlayActionScreen:
             fg="white"
         ).pack()
         
+        # Add Player / Score headers
+        header_frame_red = Frame(parent, bg="black")
+        header_frame_red.grid(row=1, column=0, sticky="n", padx=20, pady=(30, 0))
+        Label(header_frame_red, text="Player", font=("arial", 12, "bold"), bg="black", fg="white", width=15, anchor="w").grid(row=0, column=0, padx=(20, 100))
+        Label(header_frame_red, text="Score", font=("arial", 12, "bold"), bg="black", fg="white", width=10, anchor="e").grid(row=0, column=1, padx=(100, 0))
+
         # Red team players frame
         self.red_players_frame = Frame(parent, bg="black")
         self.red_players_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=10)
@@ -93,10 +92,10 @@ class PlayActionScreen:
             player_id, codename, equip_id, score = player
             player_frame = Frame(self.red_players_frame, bg="black")
             player_frame.pack(fill=X, pady=1)
-            # ⬛
+            #
             Label(
                 player_frame,
-                text=f"⬛ {codename}",
+                text=f"- {codename}",
                 font=("arial", 10),
                 bg="black",
                 fg="red",
@@ -135,6 +134,12 @@ class PlayActionScreen:
             bg="black",
             fg="white"
         ).pack()
+
+        # Add Player / Score headers
+        header_frame_green = Frame(parent, bg="black")
+        header_frame_green.grid(row=1, column=1, sticky="n", padx=20, pady=(30, 0))
+        Label(header_frame_green, text="Player", font=("arial", 12, "bold"), bg="black", fg="white", width=15, anchor="w").grid(row=0, column=0, padx=(20, 100))
+        Label(header_frame_green, text="Score", font=("arial", 12, "bold"), bg="black", fg="white", width=10, anchor="e").grid(row=0, column=1, padx=(100, 0))
         
         # Green team players frame
         self.green_players_frame = Frame(parent, bg="black")
@@ -151,7 +156,7 @@ class PlayActionScreen:
             
             Label(
                 player_frame,
-                text=f"⬛ {codename}",
+                text=f"- {codename}",
                 font=("arial", 10),
                 bg="black",
                 fg="green",
@@ -222,7 +227,16 @@ class PlayActionScreen:
             fg="white"
         )
         self.timer_label.grid(row=4, column=0, columnspan=2, pady=10)
-        
+    def setup_warning_timer(self, parent):
+        # Warning timer label at bottom
+        self.warning_timer_label = Label(
+            parent,
+            text="Warning Time Remaining: 0:30",
+            font=("arial", 16, "bold"),
+            bg="black",
+            fg="yellow"
+        )
+        self.warning_timer_label.grid(row=5, column=0, columnspan=2, pady=10)
     def add_action(self, action_text):
         """Add an action to the action feed."""
         self.action_text.config(state=NORMAL)
@@ -231,19 +245,41 @@ class PlayActionScreen:
         self.action_text.config(state=DISABLED)
         
     def update_timer(self):
-        """Update the countdown timer."""
-        elapsed = time.time() - self.game_start_time
-        remaining = max(0, self.game_duration - elapsed)
+        """Start with warning timer, then switch to game timer."""
         
-        minutes = int(remaining // 60)
-        seconds = int(remaining % 60)
-        
-        self.timer_label.config(text=f"Time Remaining: {minutes}:{seconds:02d}")
-        
-        if remaining > 0:
-            self.window.after(1000, self.update_timer)
+        # Determine which phase we're in
+        if self.game_start_time is None:
+            # Still in warning phase
+            elapsed_warning = time.time() - self.warning_start_time
+            remaining_warning = max(0, self.warning_duration - elapsed_warning)
+            
+            minutes = int(remaining_warning // 60)
+            seconds = int(remaining_warning % 60)
+            self.warning_timer_label.config(text=f"Warning! Game begins in: {minutes}:{seconds:02d}")
+            
+            if remaining_warning > 0:
+                self.window.after(1000, self.update_timer)
+            else:
+                # Switch to main game timer
+                self.add_action("Game Started!")
+                self.warning_timer_label.config(text="")
+                self.game_start_time = time.time()
+                self.update_timer()
         else:
-            self.timer_label.config(text="Game Over!")
+            # Main game phase
+            elapsed = time.time() - self.game_start_time
+            remaining = max(0, self.game_duration - elapsed)
+            
+            minutes = int(remaining // 60)
+            seconds = int(remaining % 60)
+            
+            self.timer_label.config(text=f"Time Remaining: {minutes}:{seconds:02d}")
+            
+            if remaining > 0:
+                self.window.after(1000, self.update_timer)
+            else:
+                self.timer_label.config(text="Game Over!")
+                self.add_action("Game Over!")
             
     def run(self):
         """Start the main loop."""
