@@ -76,13 +76,13 @@ class PlayActionScreen:
         
         # Add Player / Score headers
         header_frame_red = Frame(parent, bg="black")
-        header_frame_red.grid(row=1, column=0, sticky="n", padx=20, pady=(30, 0))
-        Label(header_frame_red, text="Player", font=("arial", 12, "bold"), bg="black", fg="white", width=15, anchor="w").grid(row=0, column=0, padx=(20, 100))
-        Label(header_frame_red, text="Score", font=("arial", 12, "bold"), bg="black", fg="white", width=10, anchor="e").grid(row=0, column=1, padx=(100, 0))
+        header_frame_red.grid(row=2, column=0, sticky="n", padx=20, pady=(10, 0))
+        Label(header_frame_red, text="Player", font=("arial", 12, "bold"), bg="black", fg="white", width=15, anchor="w").grid(row=0, column=0, padx=(0, 100))
+        Label(header_frame_red, text="Score", font=("arial", 12, "bold"), bg="black", fg="white", width=10, anchor="e").grid(row=0, column=1, padx=(100, 100))
 
         # Red team players frame
         self.red_players_frame = Frame(parent, bg="black")
-        self.red_players_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=10)
+        self.red_players_frame.grid(row=3, column=0, sticky="nsew", padx=20, pady=10)
         
         # Calculate total red team score 
         red_score = sum(player[3] for player in self.red_team) if self.red_team else 0
@@ -137,13 +137,13 @@ class PlayActionScreen:
 
         # Add Player / Score headers
         header_frame_green = Frame(parent, bg="black")
-        header_frame_green.grid(row=1, column=1, sticky="n", padx=20, pady=(30, 0))
-        Label(header_frame_green, text="Player", font=("arial", 12, "bold"), bg="black", fg="white", width=15, anchor="w").grid(row=0, column=0, padx=(20, 100))
-        Label(header_frame_green, text="Score", font=("arial", 12, "bold"), bg="black", fg="white", width=10, anchor="e").grid(row=0, column=1, padx=(100, 0))
+        header_frame_green.grid(row=2, column=1, sticky="n", padx=20, pady=(10, 0))
+        Label(header_frame_green, text="Player", font=("arial", 12, "bold"), bg="black", fg="white", width=15, anchor="w").grid(row=0, column=0, padx=(0, 100))
+        Label(header_frame_green, text="Score", font=("arial", 12, "bold"), bg="black", fg="white", width=10, anchor="e").grid(row=0, column=1, padx=(100, 225))
         
         # Green team players frame
         self.green_players_frame = Frame(parent, bg="black")
-        self.green_players_frame.grid(row=2, column=1, sticky="nsew", padx=20, pady=10)
+        self.green_players_frame.grid(row=3, column=1, sticky="nsew", padx=20, pady=10)
         
         # Calculate total green team score 
         green_score = sum(player[3] for player in self.green_team) if self.green_team else 0
@@ -170,7 +170,7 @@ class PlayActionScreen:
                 bg="black",
                 fg="green",
                 anchor="e"
-            ).pack(side=RIGHT)
+            ).pack(side=RIGHT, padx=(0,123))
         
         # Green team total score
         self.green_score_label = Label(
@@ -182,14 +182,14 @@ class PlayActionScreen:
         )
         self.green_score_label.pack()
         
-        parent.grid_rowconfigure(2, weight=1)
+        parent.grid_rowconfigure(3, weight=1)
         parent.grid_columnconfigure(0, weight=1)
         parent.grid_columnconfigure(1, weight=1)
         
     def setup_action_feed(self, parent):
         # Action feed section
-        action_frame = Frame(parent, bg="blue", bd=0)
-        action_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=20, pady=10)
+        action_frame = Frame(parent, bg="#0033cc", bd=2, relief = "ridge")
+        action_frame.grid(row=4, column=0, columnspan=2, sticky="ew", padx=20, pady=10)
         
         action_header = Label(
             action_frame,
@@ -226,7 +226,7 @@ class PlayActionScreen:
             bg="black",
             fg="white"
         )
-        self.timer_label.grid(row=4, column=0, columnspan=2, pady=10)
+        self.timer_label.grid(row=5, column=0, columnspan=2, pady=10)
     def setup_warning_timer(self, parent):
         # Warning timer label at bottom
         self.warning_timer_label = Label(
@@ -236,7 +236,7 @@ class PlayActionScreen:
             bg="black",
             fg="yellow"
         )
-        self.warning_timer_label.grid(row=5, column=0, columnspan=2, pady=10)
+        self.warning_timer_label.grid(row=6, column=0, columnspan=2, pady=10)
     def add_action(self, action_text):
         """Add an action to the action feed."""
         self.action_text.config(state=NORMAL)
