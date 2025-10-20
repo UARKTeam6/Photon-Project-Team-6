@@ -30,11 +30,25 @@ if ! python3 -m pip --version; then
     sudo apt-get install -y python3-pip
 fi
 
+# Helper function to work around the break-system-packages fixing pip errors for some versions and causing errors on others
+pip_install_func()
+{
+    local args = ("$@")
+    if python3 -m pip install "${args[@]}" --break-system packages 2>/dev/null; then
+        return 0
+    else
+        echo "break-system-packages not supported retry without it"
+        python3 -m pip intsall "${args[@]}"
+    fi
+}
+
+
+
 # 4) Upgrade pip to make sure it can install all python libraries, break sys packages to prevent python from flagging these
-python3 -m pip install --upgrade pip --break-system-packages
+pip_install_func --upgrade pip 
 
 # 5) Install required Python libraries (tkinter doesnt need pip)
-python3 -m pip install pillow psycopg2-binary pygame --break-system-packages
+pip_install_func pillow psycopg2-binary pygame
 sudo apt-get install -y python3-tk
 
 # 6) Confirm python libraries installed
