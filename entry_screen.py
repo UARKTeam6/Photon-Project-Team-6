@@ -18,34 +18,35 @@ def entry_screen():
     window.title("Player Entry")
     window.configure(bg="black")
 
-    # --- Window size + centering ---
-    width, height = 1000, 800  # reasonable default
+    # --- Dynamic size: 80–85% of screen height so it fits on VM ---
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
-    x = int((screen_w / 2) - (width / 2))
-    y = int((screen_h / 2) - (height / 2))
+    width = int(screen_w * 0.85)
+    height = int(screen_h * 0.85)   # smaller height to avoid cutoff
+    x = (screen_w // 2) - (width // 2)
+    y = (screen_h // 2) - (height // 2)
     window.geometry(f"{width}x{height}+{x}+{y}")
+    window.minsize(750, 550)
     window.resizable(True, True)
 
-    # --- Scrollable area ---
+    # --- Scrollable region ---
     canvas = Canvas(window, bg="black", highlightthickness=0)
     scroll_y = Scrollbar(window, orient="vertical", command=canvas.yview)
     canvas.configure(yscrollcommand=scroll_y.set)
-
     scroll_y.pack(side=RIGHT, fill=Y)
     canvas.pack(side=LEFT, fill=BOTH, expand=True)
 
-    # --- Main content frame ---
+    # --- Frame inside canvas ---
     content = Frame(canvas, bg="black")
-    canvas.create_window((0, 0), window=content, anchor="center")
+    canvas.create_window((0, 0), window=content, anchor="n")
 
-    def on_configure(event):
+    def update_scroll(event=None):
         canvas.configure(scrollregion=canvas.bbox("all"))
-    content.bind("<Configure>", on_configure)
+    content.bind("<Configure>", update_scroll)
 
     # --- Title ---
-    Label(content, text="Game Setup!", font=("Arial", 28, "bold"),
-          fg="blue", bg="black").grid(row=0, column=0, columnspan=2, pady=20)
+    Label(content, text="Game Setup!", font=("Arial", 26, "bold"),
+          fg="blue", bg="black").grid(row=0, column=0, columnspan=2, pady=10)
 
     # --- Broadcast IP ---
     global broadcast_ip
@@ -55,14 +56,14 @@ def entry_screen():
     Entry(content, textvariable=broadcast_ip, width=25,
           font=("Arial", 12)).grid(row=1, column=1, sticky="w", padx=10, pady=5)
 
-    # --- Team frames ---
+    # --- Teams container ---
     teams_container = Frame(content, bg="black")
-    teams_container.grid(row=2, column=0, columnspan=2, pady=15)
+    teams_container.grid(row=2, column=0, columnspan=2, pady=10)
 
     red_frame = Frame(teams_container, bg="darkred", padx=15, pady=15)
     green_frame = Frame(teams_container, bg="darkgreen", padx=15, pady=15)
-    red_frame.pack(side=LEFT, padx=40)
-    green_frame.pack(side=RIGHT, padx=40)
+    red_frame.pack(side=LEFT, padx=20)
+    green_frame.pack(side=RIGHT, padx=20)
 
     Label(red_frame, text="RED TEAM", bg="darkred", fg="white",
           font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=5)
@@ -99,6 +100,7 @@ def entry_screen():
         send_message(str(equip))
         print(f"[ENTRY] Added {pid}:{cname} with equip {equip}")
 
+    # --- Build team entry rows ---
     for i in range(1, MAX_TEAM_SIZE + 1):
         Label(red_frame, text=str(i), bg="darkred", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
         Label(green_frame, text=str(i), bg="darkgreen", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
@@ -143,14 +145,9 @@ def entry_screen():
         window.destroy()
         open_play_screen(red_team, green_team)
 
-    window.bind('<F5>', lambda e: start_game())
-    window.bind('<F12>', lambda e: clear_all())
-    window.bind('<Control-F5>', lambda e: start_game())
-    window.bind('<Control-F12>', lambda e: clear_all())
-
     # --- Buttons ---
     btn_frame = Frame(content, bg="black")
-    btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
+    btn_frame.grid(row=3, column=0, columnspan=2, pady=15)
     Button(btn_frame, text="Clear Entries", command=clear_all, width=20).grid(row=0, column=0, padx=10)
     Button(btn_frame, text="Start Game", command=start_game, width=20).grid(row=0, column=1, padx=10)
 
@@ -164,12 +161,10 @@ def entry_screen():
     )
     footer.grid(row=4, column=0, columnspan=2, pady=10)
 
-
-    window.update_idletasks()
-    window_width = window.winfo_width()
-    window_height = window.winfo_height()
-    pos_x = int((screen_w / 2) - (window_width / 2))
-    pos_y = int((screen_h / 2) - (window_height / 2))
-    window.geometry(f"+{pos_x}+{pos_y}")
+    # --- Key bindings ---
+    window.bind('<F5>', lambda e: start_game())
+    window.bind('<F12>', lambda e: clear_all())
+    window.bind('<Control-F5>', lambda e: start_game())
+    window.bind('<Control-F12>', lambda e: clear_all())
 
     window.mainloop()
