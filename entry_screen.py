@@ -1,25 +1,14 @@
-# entry_screen.py
-import socket
 from tkinter import *
 from tkinter import messagebox
-from PIL import Image, ImageTk
 from DatabaseInterface import get_player, add_player
 from ActionScreen import open_play_screen
 
-# --- UDP Setup ---
-TX_PORT = 7500
-sock_tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock_tx.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
+MAX_TEAM_SIZE = 15
 broadcast_ip = None
 
 def send_message(msg: str):
-    """Send a message to broadcast port 7500 using the selected address."""
-    addr = broadcast_ip.get()
-    sock_tx.sendto(msg.encode(), (addr, TX_PORT))
-    print(f"[UDP SEND] {msg} -> {addr}:{TX_PORT}")
-
-MAX_TEAM_SIZE = 15
+    """Dummy placeholder; your real socket send_message should go here"""
+    print(f"[UDP SEND] {msg}")
 
 def entry_screen():
     global broadcast_ip
@@ -28,8 +17,15 @@ def entry_screen():
     window.configure(bg="black")
     window.geometry("800x800")
 
+    # --- Grid weights so footer stays at bottom ---
+    window.grid_columnconfigure(0, weight=1)
+    window.grid_columnconfigure(1, weight=1)
+    window.grid_rowconfigure(2, weight=1)  # team frames (expand)
+    window.grid_rowconfigure(3, weight=0)  # buttons
+    window.grid_rowconfigure(4, weight=0)  # footer
+
     Label(window, text="Game Setup!", font=("Arial", 24, "bold"),
-          fg="blue", bg="black").grid(row=0, column=0, columnspan=2, pady=10)
+          fg="blue", bg="black").grid(row=0, column=0, columnspan=2, pady=10, sticky="n")
 
     # Broadcast IP selection
     broadcast_ip = StringVar(value="127.0.0.1")
@@ -131,14 +127,26 @@ def entry_screen():
         window.destroy()
         open_play_screen(red_team, green_team)
 
+    # --- Key bindings ---
     window.bind('<F5>', lambda e: start_game())
     window.bind('<F12>', lambda e: clear_all())
     window.bind('<Control-F5>', lambda e: start_game())
     window.bind('<Control-F12>', lambda e: clear_all())
 
+    # --- Buttons ---
     btn_frame = Frame(window, bg="black")
     btn_frame.grid(row=3, column=0, columnspan=2, pady=15)
     Button(btn_frame, text="Clear Entries", command=clear_all, width=20).grid(row=0, column=0, padx=10)
     Button(btn_frame, text="Start Game", command=start_game, width=20).grid(row=0, column=1, padx=10)
+
+    # --- Footer for key bindings (grid, bottom row) ---
+    footer = Label(
+        window,
+        text="Shortcuts:  F5 → Start Game   |   F12 → Clear All",
+        bg="black",
+        fg="yellow",
+        font=("Consolas", 10, "bold")
+    )
+    footer.grid(row=4, column=0, columnspan=2, pady=6, sticky="ew")
 
     window.mainloop()
