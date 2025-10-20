@@ -33,12 +33,12 @@ fi
 # Helper function to work around the break-system-packages fixing pip errors for some versions and causing errors on others
 pip_install_func()
 {
-    local args = ("$@")
-    if python3 -m pip install "${args[@]}" --break-system packages 2>/dev/null; then
+    local args=("$@")
+    if python3 -m pip install "${args[@]}" --break-system-packages 2>/dev/null; then
         return 0
     else
         echo "break-system-packages not supported retry without it"
-        python3 -m pip intsall "${args[@]}"
+        python3 -m pip install "${args[@]}"
     fi
 }
 
