@@ -8,7 +8,6 @@ from ActionScreen import open_play_screen
 TX_PORT = 7500
 sock_tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock_tx.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-ex = 2
 MAX_TEAM_SIZE = 15
 broadcast_ip = None
 
