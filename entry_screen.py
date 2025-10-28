@@ -1,15 +1,26 @@
+import socket
 from tkinter import *
 from tkinter import messagebox
 from DatabaseInterface import get_player, add_player
 from ActionScreen import open_play_screen
+
+# --- UDP Setup ---
+TX_PORT = 7500
+sock_tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock_tx.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
 MAX_TEAM_SIZE = 15
 broadcast_ip = None
 
 
 def send_message(msg: str):
-    """Placeholder for UDP broadcast (replace with your real one)."""
-    print(f"[UDP SEND] {msg}")
+    """Send a message to broadcast port 7500 using the selected address."""
+    try:
+        addr = broadcast_ip.get()
+        sock_tx.sendto(msg.encode(), (addr, TX_PORT))
+        print(f"[UDP SEND] {msg} -> {addr}:{TX_PORT}")
+    except Exception as e:
+        print(f"[UDP ERROR] Failed to send message: {e}")
 
 
 def entry_screen():
@@ -18,12 +29,14 @@ def entry_screen():
     window.title("Player Entry")
     window.configure(bg="black")
 
-    # --- Dynamic sizing (smaller width, tall height for Debian VM) ---
+    # --- Dynamic sizing (narrower but tall for Debian VM) ---
     screen_w = window.winfo_screenwidth()
     screen_h = window.winfo_screenheight()
-    width = int(screen_w * 0.7)   # narrower
-    height = int(screen_h * 0.9)  # tall
-    window.geometry(f"{width}x{height}")
+    width = int(screen_w * 0.7)
+    height = int(screen_h * 0.9)
+    x = (screen_w // 2) - (width // 2)
+    y = (screen_h // 2) - (height // 2)
+    window.geometry(f"{width}x{height}+{x}+{y}")
     window.minsize(650, 600)
     window.resizable(True, True)
     window.update_idletasks()
@@ -43,16 +56,17 @@ def entry_screen():
     window.grid_rowconfigure(0, weight=1)
     window.grid_columnconfigure(0, weight=1)
 
-    # --- Content inside scroll_frame ---
+    # --- Title ---
     Label(scroll_frame, text="Game Setup!", font=("Arial", 24, "bold"),
           fg="blue", bg="black").grid(row=0, column=0, columnspan=2, pady=10)
 
-    # Broadcast IP selection
+    # --- Broadcast IP selection ---
+    global broadcast_ip
     broadcast_ip = StringVar(value="127.0.0.1")
     Label(scroll_frame, text="Broadcast IP:", bg="black", fg="white").grid(row=1, column=0, sticky="e", padx=5)
     Entry(scroll_frame, textvariable=broadcast_ip, width=20).grid(row=1, column=1, sticky="w", padx=5, pady=5)
 
-    # Frames for teams
+    # --- Team frames ---
     red_frame = Frame(scroll_frame, bg="darkred", padx=10, pady=10)
     green_frame = Frame(scroll_frame, bg="darkgreen", padx=10, pady=10)
     red_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
@@ -63,6 +77,7 @@ def entry_screen():
     Label(green_frame, text="GREEN TEAM", bg="darkgreen", fg="white",
           font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=5)
 
+    # --- Column labels ---
     for frame in [red_frame, green_frame]:
         Label(frame, text="#", bg=frame["bg"], fg="white", width=3).grid(row=1, column=0, padx=2, pady=2)
         Label(frame, text="Player ID", bg=frame["bg"], fg="white").grid(row=1, column=1, padx=2, pady=2)
@@ -71,6 +86,7 @@ def entry_screen():
 
     red_entries, green_entries = [], []
 
+    # --- Handle player logic ---
     def handle_player_id(pid_entry, cname_entry):
         pid = pid_entry.get()
         if pid.isdigit():
@@ -93,6 +109,7 @@ def entry_screen():
         send_message(str(equip))
         print(f"[ENTRY] Added {pid}:{cname} with equip {equip}")
 
+    # --- Build player rows ---
     for i in range(1, MAX_TEAM_SIZE + 1):
         Label(red_frame, text=str(i), bg="darkred", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
         Label(green_frame, text=str(i), bg="darkgreen", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
@@ -117,6 +134,7 @@ def entry_screen():
         equip_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq))
         green_entries.append((pid_entry2, cname_entry2, equip_entry2))
 
+    # --- Button actions ---
     def clear_all():
         for row in red_entries + green_entries:
             for widget in row:
@@ -137,11 +155,7 @@ def entry_screen():
         window.destroy()
         open_play_screen(red_team, green_team)
 
-    window.bind('<F5>', lambda e: start_game())
-    window.bind('<F12>', lambda e: clear_all())
-    window.bind('<Control-F5>', lambda e: start_game())
-    window.bind('<Control-F12>', lambda e: clear_all())
-
+    # --- Buttons ---
     btn_frame = Frame(scroll_frame, bg="black")
     btn_frame.grid(row=3, column=0, columnspan=2, pady=15)
     Button(btn_frame, text="Clear Entries", command=clear_all, width=20).grid(row=0, column=0, padx=10)
@@ -156,5 +170,11 @@ def entry_screen():
         font=("Consolas", 10, "bold")
     )
     footer.grid(row=4, column=0, columnspan=2, pady=5)
+
+    # --- Key bindings ---
+    window.bind('<F5>', lambda e: start_game())
+    window.bind('<F12>', lambda e: clear_all())
+    window.bind('<Control-F5>', lambda e: start_game())
+    window.bind('<Control-F12>', lambda e: clear_all())
 
     window.mainloop()
