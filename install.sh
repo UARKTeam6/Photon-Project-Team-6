@@ -48,12 +48,12 @@ pip_install_func()
 pip_install_func --upgrade pip 
 
 # 5) Install required Python libraries (tkinter doesnt need pip)
-pip_install_func pillow psycopg2-binary pygame
+pip_install_func pillow psycopg2-binary pygame playsound
 sudo apt-get install -y python3-tk
 
 # 6) Confirm python libraries installed
 echo "Installed package versions:"
-python3 -m pip show pillow psycopg2-binary pygame | grep Version
+python3 -m pip show pillow psycopg2-binary pygame playsound | grep Version
 
 echo "=== Setup complete! ==="
 
