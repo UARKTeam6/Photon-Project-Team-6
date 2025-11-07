@@ -1,4 +1,5 @@
 from tkinter import *
+from playsound import playsound
 import time
 
 class PlayActionScreen:
@@ -7,8 +8,8 @@ class PlayActionScreen:
         Initialize the play action screen.
         
         Args:
-            red_team: List of tuples [player_id, codename, equipment_id, score]
-            green_team: List of tuples [player_id, codename, equipment_id, score]
+            red_team: List of lists [player_id, codename, equipment_id, score]
+            green_team: List of lists [player_id, codename, equipment_id, score]
         """
         self.red_team = red_team
         self.green_team = green_team
@@ -16,12 +17,14 @@ class PlayActionScreen:
         self.warning_duration = 30 # 30 seconds
         self.game_start_time = None  # will be set when warning ends
         self.game_duration = 360  # 6 minutes in seconds
+        self.mp3_file_path = "photon_tracks_Track08.mp3"
+        self.music_playing = False
         
         self.window = Tk()
         self.window.title("Play Action Display")
         self.window.configure(bg="black")
         self.window.geometry("1200x700")
-        
+
         self.setup_ui()
         self.update_timer()
         
@@ -256,7 +259,14 @@ class PlayActionScreen:
             minutes = int(remaining_warning // 60)
             seconds = int(remaining_warning % 60)
             self.warning_timer_label.config(text=f"Warning! Game begins in: {minutes}:{seconds:02d}")
-            
+
+            if remaining_warning <= 17 and not self.music_playing:
+                self.music_playing = True
+                try:
+                    playsound(self.mp3_file_path, block=False)
+                except Exception as e:
+                    print(f"Error playing sound: {e}")
+
             if remaining_warning > 0:
                 self.window.after(1000, self.update_timer)
             else:
