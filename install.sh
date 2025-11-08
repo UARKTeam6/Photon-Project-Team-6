@@ -52,8 +52,7 @@ pip_install_func pillow psycopg2-binary pygame "playsound==1.2.2"
 
 # 6) Install System libraries for playsound to work
 sudo apt-get update -y
-sudo apt-get install -y python3-tk python3-gi gir1.2-gstreamer-1.0 \
-  gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-alsa
+sudo apt-get install -y python3-tk 
 
 # 7) Confirm libraries installed
 echo "Installed package versions:"

@@ -1,6 +1,7 @@
 from tkinter import *
 from playsound import playsound
 import time
+import threading
 
 class PlayActionScreen:
     def __init__(self, red_team, green_team):
@@ -263,7 +264,7 @@ class PlayActionScreen:
             if remaining_warning <= 17 and not self.music_playing:
                 self.music_playing = True
                 try:
-                    playsound(self.mp3_file_path, block=False)
+                    threading.Thread(target=playsound, args=(self.mp3_file_path,), kwargs={"block": True}, daemon=True).start()
                 except Exception as e:
                     print(f"Error playing sound: {e}")
 
