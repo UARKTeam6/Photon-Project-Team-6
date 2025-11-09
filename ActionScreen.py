@@ -14,6 +14,8 @@ class PlayActionScreen:
         """
         self.red_team = red_team
         self.green_team = green_team
+        # map player_id -> Label widget for that player's score (for quick updates)
+        self.player_score_labels = {}
         self.warning_start_time = time.time()
         self.warning_duration = 30 # 30 seconds
         self.game_start_time = None  # will be set when warning ends
@@ -105,15 +107,17 @@ class PlayActionScreen:
                 fg="red",
                 anchor="w"
             ).pack(side=LEFT, fill=X, expand=True)
-            # right side, individual score
-            Label(
+            # right side, individual score (keep reference so we can update)
+            score_label = Label(
                 player_frame,
                 text=str(score),
                 font=("arial", 10, "bold"),
                 bg="black",
                 fg="red",
                 anchor="e"
-            ).pack(side=RIGHT)
+            )
+            score_label.pack(side=RIGHT)
+            self.player_score_labels[player_id] = score_label
         
         # Red team total score
         self.red_score_label = Label(
@@ -166,15 +170,18 @@ class PlayActionScreen:
                 fg="green",
                 anchor="w"
             ).pack(side=LEFT, fill=X, expand=True)
-            # right side, individual score
-            Label(
+            # right side, individual score (keep reference so we can update)
+            score_label = Label(
                 player_frame,
                 text=str(score),
                 font=("arial", 10, "bold"),
                 bg="black",
                 fg="green",
                 anchor="e"
-            ).pack(side=RIGHT, padx=(0,123))
+            )
+            score_label.pack(side=RIGHT, padx=(0,123))
+            self.player_score_labels[player_id] = score_label
+
         
         # Green team total score
         self.green_score_label = Label(
@@ -189,6 +196,84 @@ class PlayActionScreen:
         parent.grid_rowconfigure(3, weight=1)
         parent.grid_columnconfigure(0, weight=1)
         parent.grid_columnconfigure(1, weight=1)
+
+    # --- Game logic helpers -------------------------------------------------
+    def find_player_and_team(self, player_id):
+        """Return tuple (team_name, player_list_ref, index) where team_name is 'red' or 'green'."""
+        for idx, p in enumerate(self.red_team):
+            if p[0] == player_id:
+                return 'red', p, idx
+        for idx, p in enumerate(self.green_team):
+            if p[0] == player_id:
+                return 'green', p, idx
+        return None, None, None
+
+    def process_hit(self, attacker_id, target_id, points=1):
+        """Handle a hit event: normal hit awards points to attacker; friendly fire deducts points.
+
+        - attacker_id and target_id are player IDs (first element of player list).
+        - points is how many points to add (or deduct on friendly fire).
+        """
+        a_team, a_player, a_idx = self.find_player_and_team(attacker_id)
+        t_team, t_player, t_idx = self.find_player_and_team(target_id)
+
+        if a_player is None or t_player is None:
+            # Unknown players (could be off-field or not registered)
+            missing = []
+            if a_player is None:
+                missing.append(f"attacker ({attacker_id})")
+            if t_player is None:
+                missing.append(f"target ({target_id})")
+            self.add_action(f"Unknown {' and '.join(missing)}")
+            return
+
+        attacker_name = a_player[1]
+        target_name = t_player[1]
+
+        if a_team == t_team:
+            # friendly fire: deduct 10 points from both players (but don't go below 0)
+            a_old = a_player[3]
+            t_old = t_player[3]
+            a_new_score = max(0, a_old - 10)
+            t_new_score = max(0, t_old - 10)
+            if a_team == 'red':
+                self.red_team[a_idx] = (a_player[0], a_player[1], a_player[2], a_new_score)
+                self.red_team[t_idx] = (t_player[0], t_player[1], t_player[2], t_new_score)
+            else:
+                self.green_team[a_idx] = (a_player[0], a_player[1], a_player[2], a_new_score)
+                self.green_team[t_idx] = (t_player[0], t_player[1], t_player[2], t_new_score)
+            self.add_action(
+                f"Friendly fire: {attacker_name} ({attacker_id}) hit teammate {target_name} ({target_id}) -> Both lose 10 pts"
+            )
+        else:
+            # normal hit: award 10 points to attacker
+            new_score = a_player[3] + 10
+            if a_team == 'red':
+                self.red_team[a_idx] = (a_player[0], a_player[1], a_player[2], new_score)
+            else:
+                self.green_team[a_idx] = (a_player[0], a_player[1], a_player[2], new_score)
+            self.add_action(
+                f"{attacker_name} ({attacker_id}) hit {target_name} ({target_id}) -> +10 pts"
+            )
+        # update UI scores
+        self.update_score_labels()
+
+    def update_score_labels(self):
+        """Refresh individual and team total score labels from team data."""
+        # update individual labels
+        for p in (self.red_team or []) + (self.green_team or []):
+            pid = p[0]
+            score = p[3]
+            lbl = self.player_score_labels.get(pid)
+            if lbl:
+                lbl.config(text=str(score))
+
+        # update totals
+        red_total = sum(p[3] for p in self.red_team) if self.red_team else 0
+        green_total = sum(p[3] for p in self.green_team) if self.green_team else 0
+        self.red_score_label.config(text=str(red_total))
+        self.green_score_label.config(text=str(green_total))
+
         
     def setup_action_feed(self, parent):
         # Action feed section
