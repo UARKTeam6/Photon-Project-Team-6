@@ -2,6 +2,9 @@ from tkinter import *
 from playsound import playsound
 import time
 import threading
+import socket
+
+
 
 class PlayActionScreen:
     def __init__(self, red_team, green_team):
@@ -30,6 +33,7 @@ class PlayActionScreen:
 
         self.setup_ui()
         self.update_timer()
+        self.start_listener()
         
     def setup_ui(self):
         # Main container
@@ -376,7 +380,50 @@ class PlayActionScreen:
             else:
                 self.timer_label.config(text="Game Over!")
                 self.add_action("Game Over!")
-            
+
+    def start_listener(self):
+        """Start the UDP listener thread (daemon)."""
+        listener = threading.Thread(target=self.listen_for_hits, daemon=True)
+        listener.start()
+
+    def listen_for_hits(self):
+        """Listen for hit messages from trafficgen.py on UDP port 7501."""
+        UDP_PORT = 7501
+        BUFFER_SIZE = 1024
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(("0.0.0.0", UDP_PORT))
+        print(f"[LISTENER] Listening on UDP port {UDP_PORT}")
+
+        while True:
+            try:
+                data, addr = sock.recvfrom(BUFFER_SIZE)
+                msg = data.decode('utf-8').strip()
+                print(f"[LISTENER] Received: {msg} from {addr}")
+
+                # expected format: attacker:target
+                if ":" not in msg:
+                    print(f"[LISTENER] Invalid message format: {msg}")
+                    continue
+
+                attacker_str, target_str = msg.split(":", 1)
+                try:
+                    attacker_id = int(attacker_str)
+                    target_id = int(target_str)
+                except ValueError:
+                    # maybe base hit codes like "6025:43" stil
+                    # l parse to ints; this handles failures
+                    print(f"[LISTENER] Non-integer IDs in message: {msg}")
+                    continue
+
+                # schedule UI-safe call on the main thread
+                self.window.after(0, lambda a=attacker_id, t=target_id: self.process_hit(a, t))
+                sock.sendto(b'ACK', addr)
+
+            except Exception as e:
+                print(f"[LISTENER ERROR] {e}")
+                # keep listening even after errors
+
     def run(self):
         """Start the main loop."""
         self.window.mainloop()
