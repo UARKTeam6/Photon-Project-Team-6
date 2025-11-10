@@ -23,7 +23,8 @@ class PlayActionScreen:
         self.warning_duration = 30 # 30 seconds
         self.game_start_time = None  # will be set when warning ends
         self.game_duration = 360  # 6 minutes in seconds
-        self.mp3_file_path = r"C:\Users\User\Downloads\Photon-Project-Team-6-main\Photon-Project-Team-6-main\photon_tracks_Track08.mp3"
+        # has to use this filepath for it to run on the VM cause of linux 
+        self.mp3_file_path = "/home/student/Desktop/Photon-Project-Team-6-main/photon_tracks_Track08.mp3"
         self.music_playing = False
         
         self.window = Tk()
@@ -452,4 +453,5 @@ if __name__ == "__main__":
     red_team = [[1, "Opus", 6025, 0], [3, "Alpha", 7001, 0]]
     green_team = [[2, "Scooby Doo", 5000, 0], [4, "Bravo", 8002, 0]]
     open_play_screen(red_team, green_team)
+
 
