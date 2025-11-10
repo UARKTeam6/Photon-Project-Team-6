@@ -1,13 +1,13 @@
 import psycopg2
 
-# --- Database Connection Parameters ---
 connection_params = {
     'dbname': 'photon',
     'user': 'student',
-    # 'password': 'student',
-    # 'host': '/var/run/postgresql',  # use socket on Debian if needed
+    'host': '/var/run/postgresql',  # Debian default
+    # 'password': 'student',  # uncomment if using TCP
     # 'port': '5432'
 }
+
 
 
 # --- Get Player by ID ---
