@@ -8,6 +8,7 @@ from ActionScreen import open_play_screen
 TX_PORT = 7500
 sock_tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock_tx.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
 MAX_TEAM_SIZE = 15
 broadcast_ip = None
 
@@ -24,6 +25,7 @@ def send_message(msg: str):
 
 def entry_screen():
     global broadcast_ip
+
     window = Tk()
     window.title("Player Entry")
     window.configure(bg="black")
@@ -60,7 +62,6 @@ def entry_screen():
           fg="blue", bg="black").grid(row=0, column=0, columnspan=2, pady=10)
 
     # --- Broadcast IP selection ---
-    global broadcast_ip
     broadcast_ip = StringVar(value="127.0.0.1")
     Label(scroll_frame, text="Broadcast IP:", bg="black", fg="white").grid(row=1, column=0, sticky="e", padx=5)
     Entry(scroll_frame, textvariable=broadcast_ip, width=20).grid(row=1, column=1, sticky="w", padx=5, pady=5)
@@ -85,9 +86,9 @@ def entry_screen():
 
     red_entries, green_entries = [], []
 
-    # --- Handle player logic ---
+    # --- Handlers ---
     def handle_player_id(pid_entry, cname_entry):
-        pid = pid_entry.get()
+        pid = pid_entry.get().strip()
         if pid.isdigit():
             codename = get_player(int(pid))
             if codename:
@@ -97,22 +98,24 @@ def entry_screen():
                 messagebox.showinfo("Info", f"Player {pid} not found. Please enter new codename.")
 
     def handle_equipment(pid_entry, cname_entry, equip_entry):
-        pid, cname, equip = pid_entry.get(), cname_entry.get(), equip_entry.get()
+        pid, cname, equip = pid_entry.get().strip(), cname_entry.get().strip(), equip_entry.get().strip()
         if not (pid.isdigit() and equip.isdigit()):
             messagebox.showerror("Error", "Player ID and Equipment ID must be integers")
             return
         if not cname:
             messagebox.showerror("Error", "Codename cannot be empty")
             return
-        add_player(int(pid), cname)
+        # Persist immediately and broadcast equipment selection
+        ok = add_player(int(pid), cname)
+        if not ok:
+            print(f"[ENTRY] DB write failed for {pid}:{cname}")
         send_message(str(equip))
         print(f"[ENTRY] Added {pid}:{cname} with equip {equip}")
 
     # --- Build player rows ---
     for i in range(1, MAX_TEAM_SIZE + 1):
+        # Red
         Label(red_frame, text=str(i), bg="darkred", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
-        Label(green_frame, text=str(i), bg="darkgreen", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
-
         pid_entry = Entry(red_frame, width=6)
         cname_entry = Entry(red_frame, width=15)
         equip_entry = Entry(red_frame, width=6)
@@ -121,8 +124,12 @@ def entry_screen():
         equip_entry.grid(row=i+1, column=3, padx=2, pady=2)
         pid_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry: handle_player_id(p, c))
         equip_entry.bind("<Return>", lambda e, p=pid_entry, c=cname_entry, eq=equip_entry: handle_equipment(p, c, eq))
+        # Optional: also save when leaving the equipment cell
+        equip_entry.bind("<FocusOut>", lambda e, p=pid_entry, c=cname_entry, eq=equip_entry: handle_equipment(p, c, eq))
         red_entries.append((pid_entry, cname_entry, equip_entry))
 
+        # Green
+        Label(green_frame, text=str(i), bg="darkgreen", fg="white", width=3).grid(row=i+1, column=0, padx=2, pady=2)
         pid_entry2 = Entry(green_frame, width=6)
         cname_entry2 = Entry(green_frame, width=15)
         equip_entry2 = Entry(green_frame, width=6)
@@ -131,6 +138,7 @@ def entry_screen():
         equip_entry2.grid(row=i+1, column=3, padx=2, pady=2)
         pid_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2: handle_player_id(p, c))
         equip_entry2.bind("<Return>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq))
+        equip_entry2.bind("<FocusOut>", lambda e, p=pid_entry2, c=cname_entry2, eq=equip_entry2: handle_equipment(p, c, eq))
         green_entries.append((pid_entry2, cname_entry2, equip_entry2))
 
     # --- Button actions ---
@@ -140,17 +148,31 @@ def entry_screen():
                 widget.delete(0, END)
 
     def start_game():
+        """Persist any filled rows to DB, send start, then launch play screen."""
         send_message("202")
         print("[GAME] Starting Play Action Screen...")
         red_team, green_team = [], []
+
+        # Persist & collect RED
         for pid_entry, cname_entry, equip_entry in red_entries:
-            pid, cname, equip = pid_entry.get(), cname_entry.get(), equip_entry.get()
+            pid, cname, equip = pid_entry.get().strip(), cname_entry.get().strip(), equip_entry.get().strip()
             if pid and cname and equip:
-                red_team.append([int(pid), cname, int(equip), 0])
+                if pid.isdigit() and equip.isdigit():
+                    add_player(int(pid), cname)  # ensure DB write even if Enter wasn't pressed
+                    red_team.append([int(pid), cname, int(equip), 0])
+
+        # Persist & collect GREEN
         for pid_entry, cname_entry, equip_entry in green_entries:
-            pid, cname, equip = pid_entry.get(), cname_entry.get(), equip_entry.get()
+            pid, cname, equip = pid_entry.get().strip(), cname_entry.get().strip(), equip_entry.get().strip()
             if pid and cname and equip:
-                green_team.append([int(pid), cname, int(equip), 0])
+                if pid.isdigit() and equip.isdigit():
+                    add_player(int(pid), cname)
+                    green_team.append([int(pid), cname, int(equip), 0])
+
+        if not red_team and not green_team:
+            messagebox.showerror("No Players", "Please enter at least one player before starting.")
+            return
+
         window.destroy()
         open_play_screen(red_team, green_team)
 
