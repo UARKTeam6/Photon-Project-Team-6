@@ -27,6 +27,8 @@ class PlayActionScreen:
         import os, platform
         if platform.system() == "Darwin":  # macOS
             self.mp3_file_path = os.path.join(os.getcwd(), "photon_tracks_Track08.mp3")
+        elif platform.system() == "Windows":
+            self.mp3_file_path = os.path.join(os.getcwd(), "Photon-Project-Team-6-main\photon_tracks_Track08.mp3")
         else:  # Debian VM or Linux
             self.mp3_file_path = "/home/student/Desktop/Photon-Project-Team-6-main/photon_tracks_Track08.mp3"
 
@@ -396,3 +398,4 @@ if __name__ == "__main__":
     red_team = [[1, "Opus", 6025, 0], [3, "Alpha", 7001, 0]]
     green_team = [[2, "Scooby Doo", 5000, 0], [4, "Bravo", 8002, 0]]
     open_play_screen(red_team, green_team)
+
