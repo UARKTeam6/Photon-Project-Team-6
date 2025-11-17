@@ -3,6 +3,9 @@ import time
 import threading
 import socket
 
+from pathlib import Path
+from PIL import Image, ImageTk
+
 try:
     from playsound import playsound
 except ImportError:
@@ -17,6 +20,8 @@ class PlayActionScreen:
         self.red_team = red_team
         self.green_team = green_team
         self.player_score_labels = {}
+        self.player_name_labels = {}
+        self.base_icon_image = None
         self.warning_start_time = time.time()
         self.warning_duration = 30  # 30 sec pre-game
         self.game_start_time = None
@@ -46,6 +51,16 @@ class PlayActionScreen:
         self.window.title("Play Action Display")
         self.window.configure(bg="black")
         self.window.geometry("1200x700")
+
+        try:
+            base_icon_dir = Path(__file__).resolve().parent
+            base_icon_path = base_icon_dir / "images" / "baseicon.jpg"
+            img = Image.open(base_icon_path)
+            img = img.resize((20,20)) #shrink the icon so fits on line by player name
+            self.base_icon_image = ImageTk.PhotoImage(img)
+        except Exception as e:
+                print(f"[BASE ICON WARNING] failure to load image: {e}")
+                self.base_icon_image = None
 
         self.setup_ui()
         self.update_timer()
@@ -99,12 +114,17 @@ class PlayActionScreen:
                 total += score
                 pf = Frame(players_frame, bg="black")
                 pf.pack(fill=X, pady=1)
-                Label(pf, text=f"- {codename}", font=("Arial", 10), bg="black",
-                      fg=color, anchor="w").pack(side=LEFT, fill=X, expand=True)
+
+                name_lbl = Label(pf, text =f"- {codename}", font=("Arial", 10),
+                     bg="black", fg=color, anchor="w")
+                name_lbl.pack(side=LEFT, fill=X, expand=True)
+
                 score_lbl = Label(pf, text=str(score), font=("Arial", 10, "bold"),
-                                  bg="black", fg=color, anchor="e")
+                                  bg="black", fg=color, anchor="e")      
                 score_lbl.pack(side=RIGHT)
+
                 self.player_score_labels[pid] = score_lbl
+                self.player_name_labels[pid] = name_lbl
 
             total_lbl = Label(header_frame, text=str(total), font=("Arial", 24, "bold"),
                               bg="black", fg=color)
@@ -155,6 +175,47 @@ class PlayActionScreen:
                 self.green_team[a_i] = (a_p[0], a_p[1], a_p[2], new_score)
             self.add_action(f"{a_p[1]} hit {t_p[1]} -> +10 pts")
 
+        self.update_score_labels()
+
+    def process_base_hit(self,attacker_pid,base_code):
+        # base hit handling from traffic generator
+        # when base code = 53 --> red base scored so green attacker gets the 100pts and a base icon next to name rest of game
+        # when base code = 43 --> green base scored so red attacker gets the 100pts and a base icon next to name rest of game
+        team, player, idx = self.find_player_and_team(attacker_pid)
+        if player is None:
+            return  #player not in DB and is unknown
+        
+        if base_code == 53 and team != "green":
+                self.add_action(f"Base code 53 received but {player[1]} not on GREEN team so no points given")
+                return
+
+        if base_code == 43 and team != "red":
+                self.add_action(f"Base code 43 received but {player[1]} not on RED team so no points given")
+                return
+
+        # at this point base icon has been hit by player on opposing team so award 100pts to attacker
+        new_score = player[3] + 100
+        if team == "red":
+            self.red_team[idx] = (player[0], player[1], player[2], new_score)
+        else:
+            self.green_team[idx] = (player[0], player[1], player[2], new_score)
+
+        # adding image to the left of the player name who scored base icon
+        if self.base_icon_image and attacker_pid in self.player_name_labels:
+            lbl = self.player_name_labels[attacker_pid]
+            if not getattr(lbl, "_has_base_icon", False):
+                lbl.config(
+                    image=self.base_icon_image,
+                    compound="left",         
+                    text=f" {player[1]}"     
+                )
+                lbl._has_base_icon = True
+
+        if base_code == 53:
+            base_name = "RED"
+        else:
+            base_name = "GREEN"
+        self.add_action(f"{player[1]} scored on the {base_name} base, +100 pts!")
         self.update_score_labels()
 
     def update_score_labels(self):
@@ -315,7 +376,12 @@ class PlayActionScreen:
 
                     # if unknown equipment IDs, log and reply but don't process hit
                     if t_pid is None and t_eid in (43, 53):
-                        pass
+                        if a_pid is not None:
+                            print(f"[LISTENER] Base code {t_eid} hit by attacker player {a_pid}")
+                            self.window.after(
+                                0,
+                                lambda a=a_pid, code=t_eid: self.process_base_hit(a, code)
+                            )
                     else:
                         # determine if friendly-fire by checking team membership
                         a_team, _, _ = self.find_player_and_team(a_pid)
